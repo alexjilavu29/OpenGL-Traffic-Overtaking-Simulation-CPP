@@ -1,0 +1,118 @@
+﻿
+#include <GL/glut.h>
+
+// Variabile pentru poziția și viteza mașinilor
+float X1 = 0.0, X2 = -10.0, Y2 = 0.0;  // Obs. Nu avem nevoie de pozitia Y a primei masini deoarece se misca pe o singura axa
+float speed1 = 0.05, speed2 = 0.07;   // Vitezele pot fi modificate in functie de distantele intre masini
+bool overtaking = false; // Dacă mașina a doua se afla in depasire
+
+
+// Funcția pentru actualizarea scenei
+void update(int value) {
+    X1 += speed1; // Deplasează prima mașină
+    X2 += speed2; // Deplasează a doua mașină
+
+    // Logică pentru accelerare înainte de depășire
+    if (X2 > X1 - 3 && X2 < X1 + 3)
+    {
+        X2 += 0.1;
+    }
+    else if (X2 > X1 - 6 && X2 <X1+6)
+    {
+        X2 += 0.05;
+    }
+    else if (X2 > X1 - 8 && X2 < X1 + 8)
+    {
+        X2 += 0.03;
+    }
+
+    // Logică pentru depășire
+    if (X2 > X1 - 3 && !overtaking) {
+        overtaking = true;
+        Y2 = 1.5; // Mașina iese pe sensul opus în timpul depășirii
+    }
+    if (overtaking && X2 > X1 + 3) {
+        overtaking = false;
+        Y2 = 0.0; // Mașina revine pe banda sa după depășire
+    }
+
+    glutPostRedisplay(); // Redesenează scena
+    glutTimerFunc(25, update, 0); // Reapelează funcția update după 25 ms
+}
+
+void roadDisplay(){
+     glColor3f(0.6, 0.6, 0.6);
+
+    // Desenează linia de mijloc punctată
+    glEnable(GL_LINE_STIPPLE);
+    glLineWidth(2.0);
+    glLineStipple(2, 0x00FF); // Setează stilul liniei punctate
+    glBegin(GL_LINES);
+    glVertex2f(0.0, 20.0);
+    glVertex2f(40.0, 20.0);
+    glEnd();
+    glDisable(GL_LINE_STIPPLE);
+
+    // Desenează liniile paralele pentru marginile străzii
+    glBegin(GL_LINES);
+    glLineWidth(2.0);
+    glVertex2f(0.0, 18.5);
+    glVertex2f(40.0, 18.5);
+    glVertex2f(0.0, 21.5);
+    glVertex2f(40.0, 21.5);
+    glEnd();
+}
+
+// Funcția de desenare
+void display() {
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    roadDisplay();
+
+    // Desenează prima mașină
+    glPushMatrix();
+    glTranslated(X1, 18.8, 0.0);
+    
+
+    glColor3f(0.0, 0.0, 1.0); // Prima mașină este de culoare albastră
+    glRectf(0.0, 0.0, 1.5, 1.0); // Desenarea unui dreptunghi pentru mașină
+    
+    glPopMatrix();
+
+    // Desenează a doua mașină
+    glPushMatrix();
+    glTranslated(X2, Y2+18.8, 0.0);
+    
+     
+    glColor3f(1.0, 0.0, 0.0);
+
+    // Logică pentru semnalizare
+    if (X2 > X1 - 6 && X2 < X1 + 6)
+    {
+
+        if (abs((int)X2) % 2 == 0)
+            glColor3f(1.0, 0.0, 0.0);    // A doua mașină este de culoare roșie
+        else
+            glColor3f(0.968, 0.694, 0.145);   // Înaintea, în timpul și după depășire, mașina își schimbă culoarea alternativ pentru a simula semnalizarea.
+    }
+    glRectf(0.0, 0.0, 1.5, 1.0); // Desenarea unui dreptunghi pentru mașină
+    
+    glPopMatrix();
+
+    glutSwapBuffers();
+}
+
+int main(int argc, char** argv) {
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
+    glutInitWindowSize(800, 600);
+    glutCreateWindow("Simularea Procesului de Depășire a unei Mașini");
+    glClearColor(0.7, 0.7, 0.7, 1.0); 
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(0.0, 40.0, 0.0, 40.0);
+    glutDisplayFunc(display);
+    glutTimerFunc(25, update, 0);
+    glutMainLoop();
+    return 0;
+}
